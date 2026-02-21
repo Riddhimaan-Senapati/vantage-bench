@@ -26,7 +26,7 @@ function DeadlineLabel({ deadline }: { deadline: Date }) {
   return (
     <span
       className={cn(
-        'text-[10px] font-mono',
+        'text-xs font-mono',
         isPast ? 'text-status-red' : isUrgent ? 'text-status-red' : 'text-muted-foreground'
       )}
     >
@@ -45,9 +45,8 @@ export default function TaskList({ initialTaskId }: TaskListProps) {
     }
   }, [initialTaskId, setSelectedTaskId]);
 
-  const priorityOrder = { P0: 0, P1: 1, P2: 2 };
   const sorted = [...atRiskTasks].sort(
-    (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
+    (a, b) => a.deadline.getTime() - b.deadline.getTime()
   );
 
   const filtered =
@@ -60,13 +59,13 @@ export default function TaskList({ initialTaskId }: TaskListProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Filter pills */}
-      <div className="flex gap-2 mb-4 flex-wrap">
+      <div className="flex gap-2 mb-5 flex-wrap">
         {PILLS.map((p) => (
           <button
             key={p}
             onClick={() => setPriorityFilter(p)}
             className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
+              'px-4 py-1.5 rounded-full text-xs font-medium border transition-colors',
               priorityFilter === p
                 ? p === 'P0'
                   ? 'bg-status-red/20 text-status-red border-status-red/40'
@@ -84,7 +83,7 @@ export default function TaskList({ initialTaskId }: TaskListProps) {
       </div>
 
       {/* Task cards */}
-      <div className="flex flex-col gap-2 overflow-y-auto flex-1">
+      <div className="flex flex-col gap-3 overflow-y-auto flex-1">
         {filtered.map((task) => {
           const isSelected = selectedTaskId === task.id;
           const status = taskStatusOverrides[task.id] ?? task.status;
@@ -96,7 +95,7 @@ export default function TaskList({ initialTaskId }: TaskListProps) {
               key={task.id}
               onClick={() => setSelectedTaskId(task.id)}
               className={cn(
-                'relative text-left w-full p-3 rounded-xl border transition-all duration-200',
+                'relative text-left w-full p-4 rounded-xl border transition-all duration-200',
                 'bg-bg-surface hover:bg-bg-surface2',
                 isSelected
                   ? 'border-l-2 border-l-status-green border-y-border border-r-border bg-bg-surface2'
@@ -107,16 +106,16 @@ export default function TaskList({ initialTaskId }: TaskListProps) {
             >
               {/* Scheduled clock overlay */}
               {isScheduled && (
-                <div className="absolute top-2 right-2">
-                  <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                <div className="absolute top-3 right-3">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
                 </div>
               )}
 
-              <div className="flex items-start gap-2">
+              <div className="flex items-start gap-3">
                 {/* Priority badge */}
                 <span
                   className={cn(
-                    'text-[10px] font-mono font-medium px-1.5 py-0.5 rounded border flex-shrink-0 mt-0.5',
+                    'text-xs font-mono font-medium px-2 py-0.5 rounded border flex-shrink-0 mt-0.5',
                     getPriorityColor(task.priority)
                   )}
                 >
@@ -126,7 +125,7 @@ export default function TaskList({ initialTaskId }: TaskListProps) {
                 <div className="flex-1 min-w-0">
                   <p
                     className={cn(
-                      'text-sm font-heading font-semibold leading-tight',
+                      'text-base font-heading font-semibold leading-tight',
                       status === 'covered' && 'line-through opacity-60'
                     )}
                   >
@@ -134,20 +133,20 @@ export default function TaskList({ initialTaskId }: TaskListProps) {
                   </p>
 
                   {/* Project breadcrumb */}
-                  <p className="text-[10px] font-mono text-muted-foreground mt-0.5 truncate">
+                  <p className="text-xs font-mono text-muted-foreground mt-1 truncate">
                     {task.projectName}
                   </p>
 
-                  <div className="flex items-center gap-2 mt-1.5">
+                  <div className="flex items-center gap-2 mt-2">
                     <DeadlineLabel deadline={task.deadline} />
 
                     {/* Original assignee avatar with strikethrough */}
                     {assignee && (
                       <div className="flex items-center gap-1">
-                        <div className="w-4 h-4 rounded-full bg-bg-surface2 border border-border flex items-center justify-center text-[8px] font-bold opacity-50">
+                        <div className="w-5 h-5 rounded-full bg-bg-surface2 border border-border flex items-center justify-center text-[9px] font-bold opacity-60">
                           {getInitials(assignee.name)}
                         </div>
-                        <span className="text-[10px] text-muted-foreground line-through opacity-50">
+                        <span className="text-xs text-muted-foreground line-through opacity-65">
                           {assignee.name.split(' ')[0]}
                         </span>
                       </div>

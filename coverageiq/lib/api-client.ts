@@ -1,6 +1,6 @@
 /**
  * api-client.ts
- * Typed fetch wrappers for the CoverageIQ FastAPI backend.
+ * Typed fetch wrappers for the Vantage FastAPI backend.
  *
  * Set NEXT_PUBLIC_API_URL in .env.local (e.g. http://localhost:8000).
  * Defaults to http://localhost:8000 when the variable is absent.

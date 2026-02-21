@@ -6,10 +6,10 @@
 
 @theme inline {
   /* Custom design tokens */
-  --color-bg-base: #0c0c0f;
-  --color-bg-surface: #13131a;
-  --color-bg-surface2: #1a1a24;
-  --color-status-green: #00e5a0;
+  --color-bg-base: #0b0c12;
+  --color-bg-surface: #12141e;
+  --color-bg-surface2: #191c2c;
+  --color-status-green: #818cf8;
   --color-status-yellow: #f5c842;
   --color-status-amber: #ff8c42;
   --color-status-red: #ff4d6a;
@@ -59,37 +59,37 @@
 
 :root {
   --radius: 0.5rem;
-  --background: #0c0c0f;
+  --background: #0b0c12;
   --foreground: #e8e8f0;
-  --card: #13131a;
+  --card: #12141e;
   --card-foreground: #e8e8f0;
-  --popover: #1a1a24;
+  --popover: #191c2c;
   --popover-foreground: #e8e8f0;
-  --primary: #00e5a0;
-  --primary-foreground: #0c0c0f;
-  --secondary: #1a1a24;
+  --primary: #818cf8;
+  --primary-foreground: #0b0c12;
+  --secondary: #191c2c;
   --secondary-foreground: #e8e8f0;
-  --muted: #1a1a24;
-  --muted-foreground: #9494b2;
-  --accent: #1a1a24;
+  --muted: #191c2c;
+  --muted-foreground: #8b90b8;
+  --accent: #191c2c;
   --accent-foreground: #e8e8f0;
   --destructive: #ff4d6a;
-  --border: #2a2a38;
-  --input: #1a1a24;
-  --ring: #00e5a0;
-  --chart-1: #00e5a0;
+  --border: #1e2235;
+  --input: #191c2c;
+  --ring: #818cf8;
+  --chart-1: #818cf8;
   --chart-2: #f5c842;
   --chart-3: #ff8c42;
   --chart-4: #ff4d6a;
-  --chart-5: #818cf8;
-  --sidebar: #13131a;
+  --chart-5: #00e5a0;
+  --sidebar: #12141e;
   --sidebar-foreground: #e8e8f0;
-  --sidebar-primary: #00e5a0;
-  --sidebar-primary-foreground: #0c0c0f;
-  --sidebar-accent: #1a1a24;
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #0b0c12;
+  --sidebar-accent: #191c2c;
   --sidebar-accent-foreground: #e8e8f0;
-  --sidebar-border: #2a2a38;
-  --sidebar-ring: #00e5a0;
+  --sidebar-border: #1e2235;
+  --sidebar-ring: #818cf8;
 }
 
 @layer base {
@@ -108,14 +108,14 @@
   height: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #13131a;
+  background: #12141e;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2a38;
+  background: #1e2235;
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a3a50;
+  background: #2a3050;
 }
 
 /* Pulse animation for P0 chips */

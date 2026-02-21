@@ -9,7 +9,10 @@ import { useAppStore } from '@/store';
 const FILTER_OPTIONS = [
   { key: 'all', label: 'All Teams' },
   { key: 'risks', label: 'Risks Only' },
-  { key: 'availability', label: 'Sort by Availability' },
+  { key: 'availability', label: 'By Availability' },
+  { key: 'task_load', label: 'By Task Load' },
+  { key: 'calendar', label: 'By Calendar' },
+  { key: 'leave', label: 'On Leave' },
 ] as const;
 
 type FilterKey = (typeof FILTER_OPTIONS)[number]['key'];
@@ -52,6 +55,24 @@ export default function TeamGrid() {
         (a, b) =>
           effectiveSortScore(b.id, b.confidenceScore, b.isOOO) -
           effectiveSortScore(a.id, a.confidenceScore, a.isOOO)
+      );
+    }
+
+    if (filter === 'task_load') {
+      members = members.sort(
+        (a, b) => b.dataSources.taskLoadHours - a.dataSources.taskLoadHours
+      );
+    }
+
+    if (filter === 'calendar') {
+      members = members.sort(
+        (a, b) => b.dataSources.calendarPct - a.dataSources.calendarPct
+      );
+    }
+
+    if (filter === 'leave') {
+      members = members.filter(
+        (m) => m.dataSources.leaveStatus !== 'available' || effectiveLeaveStatus(m.id, m.isOOO) === 'ooo'
       );
     }
 

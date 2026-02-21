@@ -24,39 +24,38 @@ function StaleBanner() {
 
 export default function OverviewPage() {
   return (
-    <div className="p-6 pb-20 md:pb-6 space-y-6 max-w-[1600px]">
+    <div className="p-8 pb-20 md:pb-8 max-w-[1600px] space-y-10">
       {/* Page header */}
-      <div>
-        <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground tracking-tight leading-none">
-          Today&apos;s Overview
-        </h1>
-        <p className="text-sm text-muted-foreground mt-2">
-          Team coverage snapshot &middot;{' '}
-          {new Date().toLocaleDateString('en-US', {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric',
-          })}
-        </p>
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-heading font-bold text-foreground tracking-tight leading-none">
+            Today&apos;s Overview
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1.5">
+            {new Date().toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </p>
+        </div>
+        <StaleBanner />
       </div>
 
-      {/* Stale data banner */}
-      <StaleBanner />
-
-      {/* Summary stat blocks */}
+      {/* Summary stat strip */}
       <SummaryBar />
 
-      {/* At-risk task chip strip */}
-      <div className="space-y-2">
-        <h2 className="text-xs font-semibold text-foreground/70 uppercase tracking-widest">
+      {/* At-risk tasks */}
+      <div className="space-y-3">
+        <h2 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
           Tasks at Risk
         </h2>
         <RiskChipStrip />
       </div>
 
-      {/* Team grid */}
+      {/* Team availability */}
       <div className="space-y-3">
-        <h2 className="text-xs font-semibold text-foreground/70 uppercase tracking-widest">
+        <h2 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
           Team Availability
         </h2>
         <TeamGrid />

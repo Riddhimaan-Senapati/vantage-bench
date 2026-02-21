@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 /** Returns the stroke color hex for a given confidence score */
 export function getConfidenceColor(score: number): string {
-  if (score >= 90) return '#00e5a0'; // status-green
+  if (score >= 90) return '#818cf8'; // status-green
   if (score >= 60) return '#f5c842'; // status-yellow
   if (score >= 30) return '#ff8c42'; // status-amber
   return '#ff4d6a';                  // status-red

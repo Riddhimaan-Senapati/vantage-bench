@@ -24,8 +24,8 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'CoverageIQ',
-  description: 'Team coverage intelligence dashboard',
+  title: 'Vantage',
+  description: 'Team coverage intelligence — Vantage',
 };
 
 export default function RootLayout({
@@ -49,8 +49,8 @@ export default function RootLayout({
             theme="dark"
             toastOptions={{
               style: {
-                background: '#1a1a24',
-                border: '1px solid #2a2a38',
+                background: '#191c2c',
+                border: '1px solid #1e2235',
                 color: '#e8e8f0',
               },
             }}

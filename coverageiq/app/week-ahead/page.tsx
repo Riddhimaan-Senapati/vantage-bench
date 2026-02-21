@@ -11,12 +11,15 @@ const DAY_KEYS: DayKey[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'frida
 
 function DayCell({ score }: { score: number }) {
   const color = getConfidenceColor(score);
-  const opacity = score === 0 ? 0.15 : 0.15 + (score / 100) * 0.7;
+  const bgOpacity = score === 0 ? 0.08 : 0.18 + (score / 100) * 0.32;
 
   return (
     <div
-      className="w-7 h-7 rounded flex items-center justify-center text-[9px] font-mono"
-      style={{ backgroundColor: `${color}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`, color }}
+      className="w-9 h-9 rounded flex items-center justify-center text-xs font-mono font-semibold"
+      style={{
+        backgroundColor: `${color}${Math.round(bgOpacity * 255).toString(16).padStart(2, '0')}`,
+        color: score === 0 ? '#9494b2' : '#e8e8f0',
+      }}
       title={`${score}% available`}
     >
       {score > 0 ? score : '—'}
@@ -39,8 +42,8 @@ function WeekRow({ member, index }: { member: TeamMember; index: number }) {
           </div>
         </ConfidenceRing>
         <div className="min-w-0">
-          <p className="text-xs font-medium text-foreground truncate">{member.name}</p>
-          <p className="text-[10px] text-muted-foreground truncate">{member.role.split(' ').slice(-1)[0]}</p>
+          <p className="text-sm font-medium text-foreground truncate">{member.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{member.role.split(' ').slice(-1)[0]}</p>
         </div>
       </div>
 
@@ -81,7 +84,7 @@ export default function WeekAheadPage() {
         <div className="w-48 flex-shrink-0" />
         <div className="flex gap-2">
           {DAYS.map((d) => (
-            <div key={d} className="w-7 text-center text-[10px] font-mono text-muted-foreground">
+            <div key={d} className="w-9 text-center text-xs font-mono text-muted-foreground">
               {d}
             </div>
           ))}

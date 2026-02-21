@@ -92,7 +92,7 @@ export default function PersonCard({ member, index }: PersonCardProps) {
                 <div
                   className="flex items-center justify-center w-[44px] h-[44px] rounded-full text-xs font-bold font-heading"
                   style={{
-                    background: 'linear-gradient(135deg, #1a1a24 0%, #2a2a38 100%)',
+                    background: 'linear-gradient(135deg, #191c2c 0%, #1e2235 100%)',
                     color: '#e8e8f0',
                   }}
                 >
