@@ -1,4 +1,7 @@
 venv/Lib/*
 venv/*
 venv/
-backend/coverageiq.db
+# Or ignore all SQLite files in the project
+*.db
+*.sqlite
+*.sqlite3
