@@ -3,14 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, Calendar, Zap, Users, Wifi, WifiOff, ChevronRight } from 'lucide-react';
+import { LayoutGrid, Zap, Users, Wifi, WifiOff, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSummary } from '@/hooks/use-api';
 import { formatDistanceToNow } from 'date-fns';
 
 const navItems = [
   { href: '/overview', icon: LayoutGrid, label: 'Overview' },
-  { href: '/week-ahead', icon: Calendar, label: 'Week Ahead' },
   { href: '/task-command', icon: Zap, label: 'Task Command' },
   { href: '/team', icon: Users, label: 'Team Directory' },
 ];
