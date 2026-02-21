@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { atRiskTasks } from '@/lib/mock-data';
+import { useTasks } from '@/hooks/use-api';
 import { Task } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store';
@@ -26,9 +26,10 @@ function PriorityBadge({ priority }: { priority: Task['priority'] }) {
 
 export default function RiskChipStrip() {
   const { taskStatusOverrides } = useAppStore();
+  const { data: tasks } = useTasks();
   const router = useRouter();
 
-  const visibleTasks = atRiskTasks.filter(
+  const visibleTasks = (tasks ?? []).filter(
     (t) => (taskStatusOverrides[t.id] ?? t.status) !== 'covered'
   );
 
