@@ -4,7 +4,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { AlertTriangle } from 'lucide-react';
 import SummaryBar from '@/components/dashboard/SummaryBar';
 import RiskChipStrip from '@/components/dashboard/RiskChipStrip';
-import TeamGrid from '@/components/dashboard/TeamGrid';
 import WeekChart from '@/components/dashboard/WeekChart';
 import { useSummary, useTeamMembers } from '@/hooks/use-api';
 import { getWeekPrediction } from '@/lib/historical-data';
@@ -61,14 +60,6 @@ export default function OverviewPage() {
           Tasks at Risk
         </h2>
         <RiskChipStrip />
-      </div>
-
-      {/* Team availability */}
-      <div className="space-y-3">
-        <h2 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
-          Team Availability
-        </h2>
-        <TeamGrid />
       </div>
 
       {/* Availability forecast */}

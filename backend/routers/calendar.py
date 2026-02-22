@@ -1,7 +1,9 @@
 """
 routers/calendar.py
 ====================
-GET /calendar/team.ics
+GET  /calendar/team.ics   — merged team calendar download
+POST /calendar/upload     — upload one or more .ics files (or a .zip) and
+                            sync each matched member's availability to the DB
 
 Merges every team member's ICS file into a single VCALENDAR and returns it
 with Content-Type: text/calendar so browsers / calendar apps can subscribe to
@@ -17,13 +19,17 @@ Each VEVENT SUMMARY is prefixed with "[FirstName] " for easy identification.
 
 from __future__ import annotations
 
+import io
+import zipfile
 from pathlib import Path
 
 import icalendar
-from fastapi import APIRouter
+from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import Response
 from sqlmodel import Session, select
 
+from calendar_availability import get_availability_report
+from crud import update_member_calendar_pct, update_member_week_availability
 from database import engine
 from models import TeamMember
 
@@ -111,3 +117,130 @@ def team_calendar():
             "Cache-Control": "no-cache",
         },
     )
+
+
+# ── Helpers ─────────────────────────────────────────────────────────────────────
+
+_DAY_MAP = {
+    "Monday": "monday", "Tuesday": "tuesday", "Wednesday": "wednesday",
+    "Thursday": "thursday", "Friday": "friday",
+}
+
+
+def _collect_ics_entries(upload: UploadFile, raw: bytes) -> list[tuple[str, bytes]]:
+    """Return a list of (filename, ics_bytes) from a single UploadFile.
+
+    If the file is a ZIP archive every .ics member inside it is extracted.
+    Otherwise the file itself is returned as-is.
+    """
+    name = (upload.filename or "").lower()
+    if name.endswith(".zip") or upload.content_type in (
+        "application/zip", "application/x-zip-compressed"
+    ):
+        entries: list[tuple[str, bytes]] = []
+        try:
+            with zipfile.ZipFile(io.BytesIO(raw)) as zf:
+                for info in zf.infolist():
+                    if info.filename.lower().endswith(".ics") and not info.is_dir():
+                        entries.append((Path(info.filename).name, zf.read(info.filename)))
+        except zipfile.BadZipFile:
+            pass
+        return entries
+    return [(upload.filename or "upload.ics", raw)]
+
+
+def _match_member(filename: str, ics_bytes: bytes, members: list[TeamMember]) -> TeamMember | None:
+    """Try to find the TeamMember that owns this ICS file.
+
+    Strategy 1 — filename: strip the .ics suffix and compare to member IDs.
+    Strategy 2 — X-WR-CALNAME: parse the ICS and fuzzy-match the calendar
+                 name against member names (case-insensitive substring).
+    """
+    stem = Path(filename).stem  # e.g. "mem-001" from "mem-001.ics"
+    for m in members:
+        if m.id == stem:
+            return m
+
+    # Fallback: check X-WR-CALNAME
+    try:
+        cal = icalendar.Calendar.from_ical(ics_bytes)
+        cal_name = str(cal.get("X-WR-CALNAME", "")).lower()
+        if cal_name:
+            for m in members:
+                if m.name.lower() in cal_name or cal_name in m.name.lower():
+                    return m
+    except Exception:
+        pass
+
+    return None
+
+
+# ── Upload endpoint ──────────────────────────────────────────────────────────────
+
+@router.post("/calendar/upload")
+async def upload_calendars(files: list[UploadFile] = File(...)):
+    """Upload one or more .ics files (or a .zip archive containing them).
+
+    Each file is matched to a team member by filename (e.g. mem-001.ics) or
+    by the X-WR-CALNAME property.  Matched files are saved to backend/ics/,
+    linked in the DB, and the member's availability is recalculated.
+    """
+    ICS_DIR.mkdir(exist_ok=True)
+
+    with Session(engine) as db:
+        members = list(db.exec(select(TeamMember)).all())
+
+    processed: list[dict] = []
+    unmatched: list[str] = []
+
+    for upload in files:
+        raw = await upload.read()
+        entries = _collect_ics_entries(upload, raw)
+
+        for filename, ics_bytes in entries:
+            member = _match_member(filename, ics_bytes, members)
+            if member is None:
+                unmatched.append(filename)
+                continue
+
+            # Save ICS file
+            out_path = ICS_DIR / f"{member.id}.ics"
+            out_path.write_bytes(ics_bytes)
+            rel_path = f"ics/{member.id}.ics"
+
+            # Run availability pipeline
+            try:
+                report = get_availability_report(ics_path=out_path, timezone="UTC")
+            except Exception as exc:
+                processed.append({
+                    "memberId": member.id,
+                    "memberName": member.name,
+                    "status": "error",
+                    "detail": str(exc),
+                })
+                continue
+
+            per_day = {
+                _DAY_MAP[d["weekday"]]: round(d["availability_pct"])
+                for d in report["per_day"]
+                if d["weekday"] in _DAY_MAP
+            }
+
+            # Persist to DB
+            with Session(engine) as db:
+                row = db.get(TeamMember, member.id)
+                if row:
+                    row.ics_path = rel_path
+                    db.add(row)
+                    db.commit()
+                update_member_calendar_pct(db, member.id, report["availability_pct"])
+                update_member_week_availability(db, member.id, per_day)
+
+            processed.append({
+                "memberId": member.id,
+                "memberName": member.name,
+                "calendarPct": round(report["availability_pct"], 1),
+                "status": "ok",
+            })
+
+    return {"processed": processed, "unmatched": unmatched}

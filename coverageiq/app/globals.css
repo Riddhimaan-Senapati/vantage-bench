@@ -5,14 +5,14 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  /* Custom design tokens */
-  --color-bg-base: #0b0c12;
-  --color-bg-surface: #12141e;
-  --color-bg-surface2: #191c2c;
-  --color-status-green: #818cf8;
-  --color-status-yellow: #f5c842;
-  --color-status-amber: #ff8c42;
-  --color-status-red: #ff4d6a;
+  /* Custom design tokens — reference CSS vars so they switch with theme */
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-surface2: var(--bg-surface2);
+  --color-status-green: var(--status-green);
+  --color-status-yellow: var(--status-yellow);
+  --color-status-amber: var(--status-amber);
+  --color-status-red: var(--status-red);
 
   /* Font families */
   --font-sans: var(--font-dm-sans);
@@ -59,6 +59,14 @@
 
 :root {
   --radius: 0.5rem;
+  /* Dark mode defaults */
+  --bg-base: #0b0c12;
+  --bg-surface: #12141e;
+  --bg-surface2: #191c2c;
+  --status-green: #818cf8;
+  --status-red: #ff4d6a;
+  --status-amber: #ff8c42;
+  --status-yellow: #f5c842;
   --background: #0b0c12;
   --foreground: #e8e8f0;
   --card: #12141e;
@@ -92,6 +100,48 @@
   --sidebar-ring: #818cf8;
 }
 
+.light {
+  --bg-base: #f4f4f8;
+  --bg-surface: #ffffff;
+  --bg-surface2: #ededf5;
+  --status-green: #818cf8;
+  /* Darker, more saturated status colors so 20%-opacity badges are visible on white */
+  --status-red: #c00030;
+  --status-amber: #bf5200;
+  --status-yellow: #8f6b00;
+  --background: #f4f4f8;
+  --foreground: #0d0f1a;
+  --card: #ffffff;
+  --card-foreground: #0d0f1a;
+  --popover: #ffffff;
+  --popover-foreground: #0d0f1a;
+  --primary: #818cf8;
+  --primary-foreground: #ffffff;
+  --secondary: #ededf5;
+  --secondary-foreground: #0d0f1a;
+  --muted: #ededf5;
+  --muted-foreground: #6b6f8a;
+  --accent: #ededf5;
+  --accent-foreground: #0d0f1a;
+  --destructive: #ff4d6a;
+  --border: #dcdce8;
+  --input: #ededf5;
+  --ring: #818cf8;
+  --chart-1: #818cf8;
+  --chart-2: #d4a017;
+  --chart-3: #e07030;
+  --chart-4: #ff4d6a;
+  --chart-5: #00b87a;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0d0f1a;
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ededf5;
+  --sidebar-accent-foreground: #0d0f1a;
+  --sidebar-border: #dcdce8;
+  --sidebar-ring: #818cf8;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -108,14 +158,14 @@
   height: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #12141e;
+  background: var(--bg-surface);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e2235;
+  background: var(--border);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a3050;
+  background: var(--muted-foreground);
 }
 
 /* Pulse animation for P0 chips */

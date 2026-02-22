@@ -39,6 +39,10 @@ interface AppStore {
   // Tracks tasks whose skill pipeline is currently running in the background
   pipelineRunning: Record<string, boolean>;
   setPipelineRunning: (taskId: string, running: boolean) => void;
+
+  // Incrementing this tells both TaskList and SuggestionPanel to refetch tasks
+  tasksVersion: number;
+  bumpTasksVersion: () => void;
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -87,4 +91,7 @@ export const useAppStore = create<AppStore>((set) => ({
     set((state) => ({
       pipelineRunning: { ...state.pipelineRunning, [taskId]: running },
     })),
+
+  tasksVersion: 0,
+  bumpTasksVersion: () => set((state) => ({ tasksVersion: state.tasksVersion + 1 })),
 }));

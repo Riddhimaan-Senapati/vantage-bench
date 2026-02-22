@@ -134,6 +134,21 @@ def update_member_week_availability(
     return row
 
 
+_LEAVE_MULTIPLIER = {"available": 1.0, "partial": 0.5, "ooo": 0.0}
+
+
+def _confidence_from_calendar(calendar_pct: float, leave_status: str) -> float:
+    """
+    confidence = calendar_pct × leave_multiplier
+
+    For members with ICS files the OOO calendar blocks already push calendar_pct
+    to 0, so the multiplier only matters for manual overrides on members without
+    an ICS file.
+    """
+    multiplier = _LEAVE_MULTIPLIER.get(leave_status, 1.0)
+    return round(calendar_pct * multiplier, 1)
+
+
 def update_member_calendar_pct(
     db: Session,
     member_id: str,
@@ -142,12 +157,10 @@ def update_member_calendar_pct(
 ) -> TeamMember | None:
     """
     Persist a new calendar_pct (from ICS calculation) for the member.
-    When also_update_confidence=True, confidence_score is recalculated so
-    the frontend ring / sorting reflects the real availability:
+    When also_update_confidence=True, confidence_score is recalculated:
 
-        confidence = 0.6 * calendar_pct
-                   + 0.25 * (1 - task_load_hours / 50) * 100
-                   + 0.15 * leave_bonus
+        confidence = calendar_pct × leave_multiplier
+          where leave_multiplier = {available: 1.0, partial: 0.5, ooo: 0.0}
     """
     member = db.get(TeamMember, member_id)
     if not member:
@@ -157,15 +170,8 @@ def update_member_calendar_pct(
     member.last_synced = datetime.now(timezone.utc)
 
     if also_update_confidence:
-        load_score   = max(0.0, (1 - member.task_load_hours / 50)) * 100
-        leave_bonus  = {"available": 100.0, "partial": 50.0, "ooo": 0.0}.get(
-            member.leave_status, 100.0
-        )
-        member.confidence_score = round(
-            0.6 * member.calendar_pct
-            + 0.25 * load_score
-            + 0.15 * leave_bonus,
-            1,
+        member.confidence_score = _confidence_from_calendar(
+            member.calendar_pct, member.leave_status
         )
 
     db.add(member)
@@ -179,7 +185,10 @@ def update_member_override(
     member_id: str,
     leave_status: str,
 ) -> TeamMember | None:
-    """Persist a manual leave-status override and update is_ooo accordingly."""
+    """
+    Persist a manual leave-status override and recompute confidence_score so
+    overriding to 'ooo' immediately tanks the score even without an ICS sync.
+    """
     member = db.get(TeamMember, member_id)
     if not member:
         return None
@@ -187,6 +196,7 @@ def update_member_override(
     member.leave_status = leave_status
     member.is_ooo = leave_status == "ooo"
     member.manually_overridden = True
+    member.confidence_score = _confidence_from_calendar(member.calendar_pct, leave_status)
     db.add(member)
     db.commit()
     db.refresh(member)
@@ -309,6 +319,19 @@ def get_all_tasks(db: Session, status_filter: str | None = None) -> list[TaskOut
 def get_task_out(db: Session, task_id: str) -> TaskOut | None:
     task = db.get(Task, task_id)
     return _task_out(task, db) if task else None
+
+
+def assign_task(db: Session, task_id: str, member_id: str) -> Task | None:
+    """Set a new assignee and mark the task as covered."""
+    task = db.get(Task, task_id)
+    if not task:
+        return None
+    task.assignee_id = member_id
+    task.status = "covered"
+    db.add(task)
+    db.commit()
+    db.refresh(task)
+    return task
 
 
 def update_task_status(db: Session, task_id: str, status: str) -> Task | None:

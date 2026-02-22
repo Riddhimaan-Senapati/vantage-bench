@@ -16,6 +16,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlmodel import Session
 
 from crud import (
+    assign_task,
     create_task,
     delete_task,
     get_all_tasks,
@@ -24,7 +25,7 @@ from crud import (
     update_task_status,
 )
 from database import get_session
-from models import StatusUpdate, TaskCreate, TaskOut
+from models import ReassignUpdate, StatusUpdate, TaskCreate, TaskOut
 from skill_pipeline import run_pipeline_for_task
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -87,6 +88,19 @@ def patch_task_status(
             detail=f"status must be one of {sorted(_VALID_STATUSES)}",
         )
     row = update_task_status(db, task_id, body.status)
+    if not row:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return get_task_out(db, task_id)
+
+
+@router.patch("/{task_id}/reassign", response_model=TaskOut)
+def reassign_task(
+    task_id: str,
+    body: ReassignUpdate,
+    db: Session = Depends(get_session),
+):
+    """Assign a new member to a task and mark it as covered."""
+    row = assign_task(db, task_id, body.memberId)
     if not row:
         raise HTTPException(status_code=404, detail="Task not found")
     return get_task_out(db, task_id)

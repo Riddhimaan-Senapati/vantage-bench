@@ -187,6 +187,7 @@ export default function TaskList({ initialTaskId }: TaskListProps) {
   const { data: members } = useTeamMembers();
   const [showForm, setShowForm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
 
   // Auto-select from URL param on mount
   useEffect(() => {
@@ -199,10 +200,11 @@ export default function TaskList({ initialTaskId }: TaskListProps) {
     (a, b) => a.deadline.getTime() - b.deadline.getTime()
   );
 
-  const filtered =
+  const filtered = (
     priorityFilter === 'all'
       ? sorted
-      : sorted.filter((t) => t.priority === priorityFilter);
+      : sorted.filter((t) => t.priority === priorityFilter)
+  ).filter((t) => !deletedIds.has(t.id));
 
   const PILLS = ['all', 'P0', 'P1', 'P2'] as const;
 
@@ -223,6 +225,7 @@ export default function TaskList({ initialTaskId }: TaskListProps) {
     setDeletingId(taskId);
     try {
       await deleteTask(taskId);
+      setDeletedIds((prev) => new Set(prev).add(taskId));
       if (selectedTaskId === taskId) setSelectedTaskId(null);
       refetchTasks();
     } catch (err) {

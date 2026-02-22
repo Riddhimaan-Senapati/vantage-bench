@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useTheme } from 'next-themes';
 
 export interface WeekChartDataPoint {
   day: string;
@@ -46,6 +47,14 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 }
 
 export default function WeekChart({ data }: WeekChartProps) {
+  const { resolvedTheme } = useTheme();
+  const isLight = resolvedTheme === 'light';
+
+  // Colors that must match the card background (bg-bg-surface) to mask the band bottom
+  const cardBg = isLight ? '#ffffff' : '#12141e';
+  const gridColor = isLight ? '#dcdce8' : '#1e2235';
+  const tickColor = isLight ? '#6b6f8a' : '#8b90b8';
+
   return (
     <div className="w-full h-48">
       <ResponsiveContainer width="100%" height="100%">
@@ -63,20 +72,20 @@ export default function WeekChart({ data }: WeekChartProps) {
               <stop offset="95%" stopColor="#818cf8" stopOpacity={0.01} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e2235" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
           <XAxis
             dataKey="day"
-            tick={{ fill: '#8b90b8', fontSize: 11, fontFamily: 'var(--font-dm-mono)' }}
+            tick={{ fill: tickColor, fontSize: 11, fontFamily: 'var(--font-dm-mono)' }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            tick={{ fill: '#8b90b8', fontSize: 11, fontFamily: 'var(--font-dm-mono)' }}
+            tick={{ fill: tickColor, fontSize: 11, fontFamily: 'var(--font-dm-mono)' }}
             axisLine={false}
             tickLine={false}
             domain={[0, 'auto']}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#1e2235' }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ stroke: gridColor }} />
           {/* Confidence band — high */}
           <Area
             type="monotone"
@@ -87,12 +96,12 @@ export default function WeekChart({ data }: WeekChartProps) {
             activeDot={false}
             legendType="none"
           />
-          {/* Confidence band — low (masks bottom of band) */}
+          {/* Confidence band — low (masks bottom of band using card bg color) */}
           <Area
             type="monotone"
             dataKey="low"
             stroke="none"
-            fill="#0b0c12"
+            fill={cardBg}
             dot={false}
             activeDot={false}
             legendType="none"

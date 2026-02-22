@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, Zap, Users, Wifi, WifiOff, ChevronRight } from 'lucide-react';
+import { LayoutGrid, Zap, Users, Settings, Sun, Moon, Wifi, WifiOff, ChevronRight } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { useSummary } from '@/hooks/use-api';
-import { formatDistanceToNow } from 'date-fns';
 
 const navItems = [
   { href: '/overview', icon: LayoutGrid, label: 'Overview' },
@@ -20,7 +20,7 @@ function SyncStatus({ expanded }: { expanded: boolean }) {
 
   if (!lastSynced) {
     return (
-      <div className={cn('flex items-center gap-2 pb-4', expanded ? 'px-4' : 'flex-col px-2')}>
+      <div className={cn('flex items-center gap-2 border-t border-border', expanded ? 'h-10 px-3' : 'flex-col h-10 justify-center px-2')}>
         <Wifi className="w-4 h-4 text-muted-foreground flex-shrink-0" />
         <span className={cn('font-mono text-muted-foreground leading-none', expanded ? 'text-xs' : 'text-[9px]')}>—</span>
       </div>
@@ -31,7 +31,7 @@ function SyncStatus({ expanded }: { expanded: boolean }) {
   const isStale = diffHours > 2;
 
   return (
-    <div className={cn('flex items-center gap-2 pb-4', expanded ? 'px-4' : 'flex-col px-2')}>
+    <div className={cn('flex items-center gap-2 border-t border-border', expanded ? 'h-10 px-3' : 'flex-col h-10 justify-center px-2')}>
       {isStale ? (
         <>
           <WifiOff className="w-4 h-4 text-status-amber flex-shrink-0" />
@@ -54,6 +54,10 @@ function SyncStatus({ expanded }: { expanded: boolean }) {
 export default function Sidebar() {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(true);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const isDark = theme === 'dark';
 
   return (
     <>
@@ -103,7 +107,6 @@ export default function Sidebar() {
                     : 'text-muted-foreground hover:text-foreground hover:bg-bg-surface2'
                 )}
               >
-                {/* Active left border accent */}
                 {isActive && (
                   <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-status-green rounded-r-full" />
                 )}
@@ -111,7 +114,6 @@ export default function Sidebar() {
                 {expanded && (
                   <span className="text-sm font-medium truncate">{label}</span>
                 )}
-                {/* Tooltip — only shown when collapsed */}
                 {!expanded && (
                   <span className="absolute left-full ml-2 px-2 py-1 rounded bg-bg-surface2 text-xs text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity border border-border z-50">
                     {label}
@@ -122,13 +124,66 @@ export default function Sidebar() {
           })}
         </nav>
 
+        {/* Theme toggle + Settings — pinned at bottom above sync status */}
+        <div className={cn('flex flex-col items-center pb-1 w-full', expanded ? 'px-2' : 'px-2')}>
+          {mounted && (
+            <button
+              onClick={() => setTheme(isDark ? 'light' : 'dark')}
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              className={cn(
+                'relative flex items-center h-10 rounded-lg transition-colors group w-full text-muted-foreground hover:text-foreground hover:bg-bg-surface2',
+                expanded ? 'px-3 gap-3' : 'justify-center',
+              )}
+            >
+              {isDark
+                ? <Sun className="w-5 h-5 flex-shrink-0" />
+                : <Moon className="w-5 h-5 flex-shrink-0" />}
+              {expanded && <span className="text-sm font-medium">{isDark ? 'Light mode' : 'Dark mode'}</span>}
+              {!expanded && (
+                <span className="absolute left-full ml-2 px-2 py-1 rounded bg-bg-surface2 text-xs text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity border border-border z-50">
+                  {isDark ? 'Light mode' : 'Dark mode'}
+                </span>
+              )}
+            </button>
+          )}
+        </div>
+        <div className={cn('flex flex-col items-center pb-1 w-full', expanded ? 'px-2' : 'px-2')}>
+          {(() => {
+            const isActive = pathname.startsWith('/settings');
+            return (
+              <Link
+                href="/settings"
+                title={expanded ? undefined : 'Settings'}
+                className={cn(
+                  'relative flex items-center h-10 rounded-lg transition-colors group w-full',
+                  expanded ? 'px-3 gap-3' : 'justify-center',
+                  isActive
+                    ? 'text-status-green bg-status-green/10'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-bg-surface2'
+                )}
+              >
+                {isActive && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-status-green rounded-r-full" />
+                )}
+                <Settings className="w-5 h-5 flex-shrink-0" />
+                {expanded && <span className="text-sm font-medium">Settings</span>}
+                {!expanded && (
+                  <span className="absolute left-full ml-2 px-2 py-1 rounded bg-bg-surface2 text-xs text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity border border-border z-50">
+                    Settings
+                  </span>
+                )}
+              </Link>
+            );
+          })()}
+        </div>
+
         {/* Sync status */}
         <SyncStatus expanded={expanded} />
       </aside>
 
-      {/* Mobile: bottom nav (unchanged) */}
+      {/* Mobile: bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex bg-bg-surface border-t border-border">
-        {navItems.map(({ href, icon: Icon, label }) => {
+        {[...navItems, { href: '/settings', icon: Settings, label: 'Settings' }].map(({ href, icon: Icon, label }) => {
           const isActive = pathname.startsWith(href);
           return (
             <Link

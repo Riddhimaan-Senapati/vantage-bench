@@ -164,3 +164,7 @@ class TaskCreate(BaseModel):
     assigneeId:  Optional[str] = None   # None → unassigned; provided → covered
     deadline:    datetime
     projectName: str
+
+
+class ReassignUpdate(BaseModel):
+    memberId: str  # the new assignee's member ID
