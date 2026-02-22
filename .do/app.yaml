@@ -1,4 +1,4 @@
-name: coverageiq
+name: vantage-bench-backend
 region: nyc
 
 services:
