@@ -17,7 +17,9 @@ load_dotenv()
 
 # Default: coverageiq.db in the same directory as this file
 _DEFAULT_DB = f"sqlite:///{Path(__file__).parent / 'coverageiq.db'}"
-DATABASE_URL: str = os.getenv("DATABASE_URL", _DEFAULT_DB)
+# DB_URL takes priority — use this in DO App Platform to bypass the automatic
+# database-attachment binding that controls DATABASE_URL.
+DATABASE_URL: str = os.getenv("DB_URL") or os.getenv("DATABASE_URL", _DEFAULT_DB)
 
 # Debug: log the first 40 chars of DATABASE_URL so we can see what was received
 print(
