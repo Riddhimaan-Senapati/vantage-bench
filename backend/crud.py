@@ -362,7 +362,7 @@ def tick_slack_ooo_status(db: Session) -> tuple[list[str], list[str]]:
         # Compare calendar dates, not UTC datetimes — a date-only end like "2/22"
         # parses to midnight UTC, which would wrongly trigger a restore if the sync
         # runs even one second into that UTC day.
-        if ooo_until is not None and ooo_until.date() < now.date():
+        # if ooo_until is not None and ooo_until.date() < now.date():
         # Restore: OOO window has ended.
         # Compare calendar dates so an OOO ending "today" stays active all day,
         # matching the same logic used in apply_timeoff_entries.
