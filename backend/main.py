@@ -55,6 +55,7 @@ from routers.members import router as members_router
 from routers.tasks import router as tasks_router
 from routers.calendar import router as calendar_router
 from routers.gmail import router as gmail_router
+from routers.chat import router as chat_router
 from seed import seed
 from slack_parser import TimeOffEntry, fetch_and_parse, fetch_and_parse_debug
 
@@ -117,6 +118,7 @@ app.include_router(members_router)
 app.include_router(tasks_router)
 app.include_router(calendar_router)
 app.include_router(gmail_router)
+app.include_router(chat_router)
 
 
 # ── Core routes ────────────────────────────────────────────────────────────────

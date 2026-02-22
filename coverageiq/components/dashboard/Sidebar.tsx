@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, Zap, Users, Settings, Sun, Moon, Mail, MessageSquare, ChevronRight } from 'lucide-react';
+import { LayoutGrid, Zap, Users, Settings, Sun, Moon, Mail, MessageSquare, ChevronRight, Sparkles } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,7 @@ const navItems = [
   { href: '/overview', icon: LayoutGrid, label: 'Overview' },
   { href: '/task-command', icon: Zap, label: 'Task Command' },
   { href: '/team', icon: Users, label: 'Team Directory' },
+  { href: '/chat', icon: Sparkles, label: 'Vantage AI' },
 ];
 
 function SyncPills({ expanded }: { expanded: boolean }) {
