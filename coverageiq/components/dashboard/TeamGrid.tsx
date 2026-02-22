@@ -27,7 +27,7 @@ export default function TeamGrid() {
   const atRiskMemberIds = new Set((tasks ?? []).map((t) => t.assigneeId));
 
   // Compute the effective leave status for a member, respecting manual overrides.
-  // Falls back to member.dataSources.leaveStatus so persisted 'partial' / 'ooo' values
+  // Falls back to member.dataSources.leaveStatus so persisted 'ooo' values
   // survive page reloads (leaveStatus in DB already reflects the last override or ICS sync).
   function effectiveLeaveStatus(member: TeamMember) {
     const override = overrides.find((o) => o.memberId === member.id);
@@ -35,11 +35,9 @@ export default function TeamGrid() {
     return member.dataSources.leaveStatus;
   }
 
-  // Availability score used for sorting: overrides to 'ooo' → 0, 'partial' → 50% penalty
+  // Availability score used for sorting: 'ooo' → 0, otherwise use confidence score directly
   function effectiveSortScore(member: TeamMember) {
-    const status = effectiveLeaveStatus(member);
-    if (status === 'ooo') return 0;
-    if (status === 'partial') return Math.round(member.confidenceScore * 0.5);
+    if (effectiveLeaveStatus(member) === 'ooo') return 0;
     return member.confidenceScore;
   }
 

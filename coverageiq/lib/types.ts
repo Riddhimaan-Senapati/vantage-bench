@@ -23,7 +23,7 @@ export interface Task {
 export interface DataSourceSignal {
   calendarPct: number;       // 0-100, calendar integration fill %
   taskLoadHours: number;     // current task load in hours
-  leaveStatus: 'available' | 'partial' | 'ooo';
+  leaveStatus: 'available' | 'ooo';
 }
 
 export interface WeekAvailability {

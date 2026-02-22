@@ -329,7 +329,6 @@ def get_summary(db: Session) -> SummaryOut:
     tasks   = db.exec(select(Task)).all()
 
     ooo             = sum(1 for m in members if m.is_ooo)
-    partial         = sum(1 for m in members if not m.is_ooo and m.leave_status == "partial")
     fully_available = sum(1 for m in members if not m.is_ooo and m.leave_status == "available")
     critical_risk   = sum(1 for t in tasks if t.priority in ("P0", "P1") and t.status != "covered")
     unresolved      = sum(1 for t in tasks if t.status != "covered")
@@ -340,7 +339,6 @@ def get_summary(db: Session) -> SummaryOut:
 
     return SummaryOut(
         ooo=ooo,
-        partial=partial,
         fullyAvailable=fully_available,
         criticalAtRisk=critical_risk,
         unresolvedReassignments=unresolved,

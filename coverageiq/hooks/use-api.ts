@@ -157,7 +157,7 @@ export function useMemberOverride() {
   });
 
   const trigger = useCallback(
-    async (memberId: string, leaveStatus: 'available' | 'partial' | 'ooo') => {
+    async (memberId: string, leaveStatus: 'available' | 'ooo') => {
       setState({ data: null, loading: true, error: null });
       try {
         const updated = await updateMemberOverride(memberId, leaveStatus);

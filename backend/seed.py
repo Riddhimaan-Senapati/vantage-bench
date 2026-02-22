@@ -124,7 +124,7 @@ def _sync_maya(db: Session) -> None:
     print(
         f"Maya Patel calendar synced: {report['availability_pct']}% available "
         f"({report['total_available_minutes']}/{report['total_work_minutes']} min) "
-        f"→ confidence_score={updated.confidence_score} | per-day={per_day}"
+        f"-> confidence_score={updated.confidence_score} | per-day={per_day}"
     )
 
 

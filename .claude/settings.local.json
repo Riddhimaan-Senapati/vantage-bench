@@ -32,7 +32,8 @@
       "Bash(cd /c/Users/riddh/entreprise-planning && sleep 20 && gh api repos/Riddhimaan-Senapati/entreprise-planning/pulls/2 --jq '{mergeable: .mergeable, state: .mergeable_state, head: .head.sha[0:7], base: .base.sha[0:7]}' 2>&1)",
       "Bash(cd /c/Users/riddh/entreprise-planning && gh pr view 2 --json headRefOid,baseRefOid,headRefName,baseRefName,mergeable,mergeStateStatus 2>&1)",
       "Bash(cd /c/Users/riddh/entreprise-planning/backend && rm -f coverageiq.db && python seed.py 2>&1)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(cd /c/Users/riddh/entreprise-planning/backend && python -c \"import main; print\\('OK'\\)\" 2>&1)"
     ]
   }
 }

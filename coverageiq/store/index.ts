@@ -3,7 +3,7 @@ import { TaskStatus } from '@/lib/types';
 
 interface ManualOverride {
   memberId: string;
-  status: 'available' | 'partial' | 'ooo';
+  status: 'available' | 'ooo';
 }
 
 interface AppStore {
@@ -21,7 +21,7 @@ interface AppStore {
 
   // Manual overrides for person status
   overrides: ManualOverride[];
-  setOverride: (memberId: string, status: 'available' | 'partial' | 'ooo') => void;
+  setOverride: (memberId: string, status: 'available' | 'ooo') => void;
   clearOverride: (memberId: string) => void;
 
   // Task status overrides (after reassign / schedule)

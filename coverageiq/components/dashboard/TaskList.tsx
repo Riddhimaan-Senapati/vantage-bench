@@ -8,7 +8,7 @@ import { Task } from '@/lib/types';
 import { cn, getPriorityColor } from '@/lib/utils';
 import { useAppStore } from '@/store';
 import { createTask, deleteTask } from '@/lib/api-client';
-import { Clock, Plus, Trash2, X } from 'lucide-react';
+import { Clock, Loader2, Plus, Trash2, X } from 'lucide-react';
 
 interface TaskListProps {
   initialTaskId?: string;
@@ -305,7 +305,8 @@ export default function TaskList({ initialTaskId }: TaskListProps) {
                   ? 'border-l-2 border-l-status-green border-y-border border-r-border bg-bg-surface2'
                   : 'border-border',
                 isScheduled && 'opacity-50',
-                status === 'covered' && 'opacity-60'
+                status === 'covered' && 'opacity-60',
+                deletingId === task.id && 'opacity-40 pointer-events-none'
               )}
             >
               {/* Scheduled clock overlay */}
@@ -323,7 +324,10 @@ export default function TaskList({ initialTaskId }: TaskListProps) {
                   title="Delete task"
                   className="absolute top-2.5 right-2.5 p-1 rounded-md text-muted-foreground hover:text-status-red hover:bg-status-red/10 transition-colors disabled:opacity-40"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  {deletingId === task.id
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    : <Trash2 className="w-3.5 h-3.5" />
+                  }
                 </button>
               )}
 

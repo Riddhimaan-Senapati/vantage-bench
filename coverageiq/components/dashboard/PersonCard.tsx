@@ -61,7 +61,7 @@ export default function PersonCard({ member, index }: PersonCardProps) {
   // Status to display in the "Overridden to X" tooltip line
   const displayOverrideStatus = override?.status ?? (member.manuallyOverridden ? member.dataSources.leaveStatus : null);
 
-  const handleSetOverride = (status: 'available' | 'partial' | 'ooo') => {
+  const handleSetOverride = (status: 'available' | 'ooo') => {
     setOverride(member.id, status);                    // optimistic
     triggerOverride(member.id, status).catch(() => {}); // persist
   };
@@ -183,11 +183,7 @@ export default function PersonCard({ member, index }: PersonCardProps) {
               <span
                 className={cn(
                   'w-2 h-2 rounded-full flex-shrink-0',
-                  effectiveStatus === 'available'
-                    ? 'bg-status-green'
-                    : effectiveStatus === 'partial'
-                    ? 'bg-status-yellow'
-                    : 'bg-status-red'
+                  effectiveStatus === 'available' ? 'bg-status-green' : 'bg-status-red'
                 )}
               />
               <span className="text-muted-foreground">Leave</span>
@@ -211,12 +207,6 @@ export default function PersonCard({ member, index }: PersonCardProps) {
           onClick={() => handleSetOverride('available')}
         >
           Mark as Available
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          className="text-status-yellow cursor-pointer text-xs"
-          onClick={() => handleSetOverride('partial')}
-        >
-          Mark as Partially Available
         </DropdownMenuItem>
         <DropdownMenuItem
           className="text-status-red cursor-pointer text-xs"

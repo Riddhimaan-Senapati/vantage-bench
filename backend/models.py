@@ -136,7 +136,6 @@ class TeamMemberOut(BaseModel):
 
 class SummaryOut(BaseModel):
     ooo:                    int
-    partial:                int
     fullyAvailable:         int
     criticalAtRisk:         int
     unresolvedReassignments: int

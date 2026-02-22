@@ -62,7 +62,6 @@ type ApiTeamMember = Omit<TeamMember, 'lastSynced' | 'currentTasks'> & {
 
 export interface Summary {
   ooo: number;
-  partial: number;
   fullyAvailable: number;
   criticalAtRisk: number;
   unresolvedReassignments: number;
@@ -83,7 +82,7 @@ export async function fetchMember(id: string): Promise<TeamMember> {
 
 export async function updateMemberOverride(
   id: string,
-  leaveStatus: 'available' | 'partial' | 'ooo',
+  leaveStatus: 'available' | 'ooo',
 ): Promise<TeamMember> {
   const raw = await apiFetch<ApiTeamMember>(`/members/${id}/override`, {
     method: 'PATCH',

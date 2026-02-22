@@ -56,7 +56,7 @@ def override_member(
     body: OverrideUpdate,
     db: Session = Depends(get_session),
 ):
-    valid = {"available", "partial", "ooo"}
+    valid = {"available", "ooo"}
     if body.leaveStatus not in valid:
         raise HTTPException(
             status_code=422,

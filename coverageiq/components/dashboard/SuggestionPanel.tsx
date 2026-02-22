@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { toast } from 'sonner';
-import { CheckCircle2, Clock, Loader2, RefreshCw, Send, UserMinus } from 'lucide-react';
+import { CheckCircle2, Loader2, RefreshCw, Send, UserMinus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ConfidenceRing from './ConfidenceRing';
 import { useTasks, useTeamMembers } from '@/hooks/use-api';
@@ -23,12 +23,11 @@ interface SuggestionCardProps {
 }
 
 function SuggestionCard({ suggestion, task, member, rank }: SuggestionCardProps) {
-  const { setTaskStatus, setPingSent, setScheduled, pingSent, scheduledTasks } = useAppStore();
+  const { setTaskStatus, setPingSent, pingSent } = useAppStore();
 
   // Keyed by "taskId:memberId" — asking someone about Task A doesn't affect their button on Task B
   const pingKey = `${task.id}:${member.id}`;
   const hasPingSent = pingSent[pingKey] ?? false;
-  const isTaskScheduled = scheduledTasks[task.id];
 
   const handleReassign = () => {
     setTaskStatus(task.id, 'covered');                    // optimistic
@@ -67,14 +66,6 @@ function SuggestionCard({ suggestion, task, member, rank }: SuggestionCardProps)
         duration: 6000,
       });
     }
-  };
-
-  const handleSchedule = () => {
-    setScheduled(task.id);
-    toast(`Deferred to tomorrow`, {
-      description: "This task moves to tomorrow's queue and is dimmed in the list.",
-      duration: 3000,
-    });
   };
 
   return (
@@ -174,17 +165,6 @@ function SuggestionCard({ suggestion, task, member, rank }: SuggestionCardProps)
         >
           <Send className="w-4 h-4 mr-1.5" />
           {hasPingSent ? 'Asked ✓' : 'Check availability'}
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={handleSchedule}
-          disabled={isTaskScheduled}
-          className="flex-1 text-sm h-9 text-muted-foreground hover:text-foreground"
-          title="Defer this task to tomorrow's queue."
-        >
-          <Clock className="w-4 h-4 mr-1.5" />
-          Tomorrow
         </Button>
       </div>
     </div>

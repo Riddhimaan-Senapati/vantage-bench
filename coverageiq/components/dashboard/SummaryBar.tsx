@@ -48,7 +48,6 @@ export default function SummaryBar() {
   const taskList = tasks ?? [];
 
   const ooo             = memberList.filter((m) => effectiveMemberStatus(m.id, m.dataSources.leaveStatus) === 'ooo').length;
-  const partial         = memberList.filter((m) => effectiveMemberStatus(m.id, m.dataSources.leaveStatus) === 'partial').length;
   const fullyAvailable  = memberList.filter((m) => effectiveMemberStatus(m.id, m.dataSources.leaveStatus) === 'available').length;
   const criticalAtRisk  = taskList.filter((t) => (t.priority === 'P0' || t.priority === 'P1') && effectiveTaskStatus(t.id, t.status) !== 'covered').length;
   const unresolved      = taskList.filter((t) => effectiveTaskStatus(t.id, t.status) !== 'covered').length;
@@ -56,7 +55,6 @@ export default function SummaryBar() {
   return (
     <div className="flex bg-bg-surface border border-border rounded-xl divide-x divide-border overflow-hidden">
       <StatBlock label="People Out" value={ooo} />
-      <StatBlock label="Partially Available" value={partial} colorClass="text-status-yellow" />
       <StatBlock label="Fully Available" value={fullyAvailable} colorClass="text-status-green" />
       <StatBlock
         label="Critical at Risk"

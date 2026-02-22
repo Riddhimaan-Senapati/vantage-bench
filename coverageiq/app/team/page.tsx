@@ -180,7 +180,6 @@ function SkillsEditor({ memberId, initialSkills }: { memberId: string; initialSk
 
 const STATUS_STYLES = {
   available: 'bg-status-green/10 text-status-green border-status-green/30',
-  partial:   'bg-status-amber/20 text-status-amber border-status-amber/40',
   ooo:       'bg-status-red/10 text-status-red border-status-red/30',
 } as const;
 
