@@ -330,8 +330,9 @@ def tick_slack_ooo_status(db: Session) -> tuple[list[str], list[str]]:
         ooo_until = _ensure_utc(m.slack_ooo_until)
         ooo_start = _ensure_utc(m.slack_ooo_start)
 
-        # Restore: OOO window has ended
-        if ooo_until is not None and ooo_until <= now:
+        # Restore: OOO window has ended (compare calendar dates to avoid
+        # midnight-UTC false-positives where end_dt parses to 00:00 UTC)
+        if ooo_until is not None and ooo_until.date() < now.date():
             m.leave_status = "available"
             m.is_ooo = False
             m.confidence_score = _confidence_from_calendar(m.calendar_pct, "available")
@@ -375,8 +376,10 @@ def apply_timeoff_entries(
         start_dt = _parse_date_str(entry.start_date) or now
         end_dt   = _parse_date_str(entry.end_date)
 
-        # Skip stale entries (entire OOO window has already passed)
-        if end_dt is not None and end_dt <= now:
+        # Skip stale entries (entire OOO window has already passed).
+        # Compare calendar dates so entries whose end_date parses to midnight
+        # UTC aren't incorrectly skipped on the same UTC day.
+        if end_dt is not None and end_dt.date() < now.date():
             skipped += 1
             continue
 

@@ -47,7 +47,7 @@ MAX_RETRIES = 4
 # Pre-filter query sent to the Gmail search API.
 # Only emails matching these OOO-related keywords reach Gemini, which:
 #   - drastically reduces the number of Gemini API calls
-#   - caps latency to a manageable level even with max_results=100
+#   - caps latency to a manageable level even with max_results=10
 _SEARCH_DAYS = int(os.getenv("GMAIL_SEARCH_DAYS", "30"))
 GMAIL_SEARCH_QUERY = (
     f"(subject:(OOO OR \"out of office\" OR vacation OR \"on leave\" OR "
@@ -235,6 +235,26 @@ def _parse_sender(from_raw: str) -> tuple[str, str]:
     return from_raw, ""
 
 
+# ── Per-email trace model (used by the /gmail/debug endpoint) ─────────────────
+
+class GmailEmailTrace(BaseModel):
+    """Raw per-email trace: Gmail metadata + Gemini output. No DB interaction."""
+    id:           str
+    subject:      str
+    sender_name:  str
+    sender_email: str
+    sent_at:      str
+    body_length:  int
+    body_preview: str
+    is_ooo:       Optional[bool] = None
+    person_name:  Optional[str]  = None
+    start_date:   Optional[str]  = None
+    end_date:     Optional[str]  = None
+    reason:       Optional[str]  = None
+    notes:        Optional[str]  = None
+    error:        Optional[str]  = None
+
+
 # ── API response model compatible with apply_timeoff_entries() ────────────────
 
 class GmailTimeOffEntry(BaseModel):
@@ -254,9 +274,78 @@ class GmailTimeOffEntry(BaseModel):
     notes:             Optional[str] = None
 
 
-# ── Main public function ───────────────────────────────────────────────────────
+# ── Main public functions ──────────────────────────────────────────────────────
 
-def fetch_and_parse_gmail(max_results: int = 100) -> list[GmailTimeOffEntry]:
+def fetch_and_parse_gmail_debug(
+    max_results: int = 10,
+) -> tuple[str, int, int, list[GmailEmailTrace]]:
+    """
+    Debug version of fetch_and_parse_gmail: runs the Gmail search + Gemini
+    classification pipeline and returns per-email trace data without touching
+    the database.
+
+    Returns:
+        (search_query, search_days, emails_found, email_traces)
+    """
+    service = build_gmail_service()
+
+    list_response = service.users().messages().list(
+        userId=GMAIL_USER_EMAIL,
+        q=GMAIL_SEARCH_QUERY,
+        maxResults=max_results,
+    ).execute()
+
+    message_stubs = list_response.get("messages", [])
+    traces: list[GmailEmailTrace] = []
+
+    for i, stub in enumerate(message_stubs):
+        msg = service.users().messages().get(
+            userId=GMAIL_USER_EMAIL,
+            id=stub["id"],
+            format="full",
+        ).execute()
+
+        headers     = msg.get("payload", {}).get("headers", [])
+        subject     = _get_header(headers, "Subject") or "(no subject)"
+        from_raw    = _get_header(headers, "From")
+        sender_name, sender_email = _parse_sender(from_raw)
+
+        internal_ms = int(msg.get("internalDate", 0))
+        sent_at     = datetime.fromtimestamp(internal_ms / 1000, tz=timezone.utc)
+
+        body         = _decode_body(msg.get("payload", {}))
+        body_preview = body[:400].strip()
+
+        trace = GmailEmailTrace(
+            id=stub["id"],
+            subject=subject,
+            sender_name=sender_name,
+            sender_email=sender_email,
+            sent_at=sent_at.isoformat(),
+            body_length=len(body),
+            body_preview=body_preview,
+        )
+
+        try:
+            details = _parse_email_for_ooo(subject, sender_name, sender_email, body, sent_at)
+            trace.is_ooo      = details.is_ooo
+            trace.person_name = details.person_name
+            trace.start_date  = details.start_date
+            trace.end_date    = details.end_date
+            trace.reason      = details.reason
+            trace.notes       = details.notes
+        except Exception as exc:
+            trace.error = str(exc)
+
+        traces.append(trace)
+
+        if i < len(message_stubs) - 1:
+            time.sleep(INTER_CALL_DELAY_SECONDS)
+
+    return GMAIL_SEARCH_QUERY, _SEARCH_DAYS, len(message_stubs), traces
+
+
+def fetch_and_parse_gmail(max_results: int = 10) -> list[GmailTimeOffEntry]:
     """
     1. Search Gmail for OOO-related emails (pre-filtered by keyword query).
     2. Fetch each matching email's full content.
@@ -265,8 +354,8 @@ def fetch_and_parse_gmail(max_results: int = 100) -> list[GmailTimeOffEntry]:
 
     Args:
         max_results: Maximum number of emails to retrieve from the Gmail search
-                     (default 100). Because the search pre-filters by OOO keywords,
-                     this corresponds to "scan up to 100 OOO-related emails".
+                     (default 10). Because the search pre-filters by OOO keywords,
+                     this corresponds to "scan up to 10 OOO-related emails".
 
     Returns:
         List of GmailTimeOffEntry objects for confirmed OOO emails only.
