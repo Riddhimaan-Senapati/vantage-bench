@@ -71,14 +71,23 @@ def seed(db: Session) -> None:
             friday=week["friday"],
         ))
 
-    print("Seeding tasks and suggestions...")
+    print("Seeding tasks...")
+    all_suggestions: list[tuple[str, list]] = []
     for t in tasks:
         suggestions = t.pop("suggestions")
         deadline_hours = t.pop("deadline_hours")
         db.add(Task(**t, deadline=NOW + timedelta(hours=deadline_hours)))
+        all_suggestions.append((t["id"], suggestions))
+
+    # Flush members and tasks into the transaction first so PostgreSQL FK
+    # constraints are satisfied when we insert suggestions below.
+    db.flush()
+
+    print("Seeding suggestions...")
+    for task_id, suggestions in all_suggestions:
         for rank, s in enumerate(suggestions):
             db.add(Suggestion(
-                task_id=t["id"],
+                task_id=task_id,
                 member_id=s["member_id"],
                 skill_match_pct=s["skill_match_pct"],
                 workload_pct=s["workload_pct"],
@@ -89,8 +98,11 @@ def seed(db: Session) -> None:
     db.commit()
     print(f"Seeded {len(members)} members and {len(tasks)} tasks.")
 
-    # Run ICS availability for Maya Patel so she has a live calendar_pct
-    _sync_maya(db)
+    # Run ICS availability for Maya Patel — non-fatal if ICS file is missing in prod
+    try:
+        _sync_maya(db)
+    except Exception as exc:
+        print(f"Warning: Maya ICS sync skipped: {exc}", file=sys.stderr)
 
 
 def _sync_maya(db: Session) -> None:

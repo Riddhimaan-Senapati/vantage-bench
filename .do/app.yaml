@@ -18,7 +18,7 @@ services:
     envs:
       # Values for secrets are set in the App Platform console, not here.
       # Listing them here so App Platform knows they exist.
-      - key: DATABASE_URL
+      - key: DB_URL
         scope: RUN_TIME
         type: secret
 
