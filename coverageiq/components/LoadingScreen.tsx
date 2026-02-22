@@ -9,8 +9,8 @@ export default function LoadingScreen() {
   useEffect(() => {
     // Logo animates in at ~0.1s, text at ~0.4s — give everything time to fully
     // appear before starting the exit slide (1 400ms feels snappy but readable).
-    const exitTimer = setTimeout(() => setExiting(true), 1400);
-    const doneTimer = setTimeout(() => setDone(true), 2000);
+    const exitTimer = setTimeout(() => setExiting(true), 400);
+    const doneTimer = setTimeout(() => setDone(true), 1200);
 
     return () => {
       clearTimeout(exitTimer);
@@ -42,38 +42,16 @@ export default function LoadingScreen() {
         }}
       />
 
-      <div className="flex flex-col items-center gap-6 relative">
-        {/* Logo mark */}
-        <div
-          className="w-24 h-24 rounded-3xl bg-status-green flex items-center justify-center"
+      <div className="relative">
+        <img
+          src="/logo_main.PNG"
+          alt="Vantage"
           style={{
-            animation: 'vantage-logo-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both',
-            boxShadow: '0 0 80px rgba(129, 140, 248, 0.4)',
+            width: '480px',
+            height: 'auto',
+            animation: 'vantage-logo-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both',
           }}
-        >
-          <svg viewBox="0 0 16 16" width="48" height="48" fill="none" aria-hidden="true">
-            <path
-              d="M5 3L8 13L11 3"
-              stroke="#0b0c12"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
-
-        {/* App name — overflow hidden makes the slide-up feel like a curtain reveal */}
-        <div style={{ overflow: 'hidden', paddingBottom: '4px' }}>
-          <h1
-            className="font-heading font-bold text-[2.75rem] tracking-tight leading-none"
-            style={{
-              animation: 'vantage-slide-up 0.35s ease-out 0.4s both',
-              color: '#e8e8f0',
-            }}
-          >
-            Vantage
-          </h1>
-        </div>
+        />
       </div>
     </div>
   );

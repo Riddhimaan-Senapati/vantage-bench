@@ -71,19 +71,17 @@ export default function Sidebar() {
       {/* Desktop: collapsible left sidebar */}
       <aside
         className={cn(
-          'hidden md:flex flex-col h-screen bg-bg-surface border-r border-border sticky top-0 flex-shrink-0 transition-[width] duration-200 overflow-hidden',
-          expanded ? 'w-[220px]' : 'w-[60px]'
+          'hidden md:flex flex-col h-screen bg-bg-surface border border-l-0 border-border sticky top-0 flex-shrink-0 transition-[width] duration-200 overflow-hidden',
+          expanded ? 'w-[240px]' : 'w-[72px]'
         )}
       >
         {/* Logo / Brand mark + toggle */}
-        <div className={cn('flex items-center h-14 border-b border-border flex-shrink-0', expanded ? 'px-4 gap-3' : 'justify-center')}>
-          <div className="w-7 h-7 rounded-md bg-status-green flex items-center justify-center flex-shrink-0">
-            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
-              <path d="M5 3L8 13L11 3" stroke="#0b0c12" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+        <div className={cn('flex items-center h-14 border-b border-border flex-shrink-0', expanded ? 'px-4 gap-3' : 'pl-4')}>
+          <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-[#0b0d14] border-2 border-green-500/70 shadow-[0_0_8px_rgba(34,197,94,0.45)]">
+            <img src="/logo_V.png" alt="Vantage" className="w-full h-full object-contain" />
           </div>
           {expanded && (
-            <span className="flex-1 text-sm font-heading font-bold text-foreground truncate">Vantage</span>
+            <span className="flex-1 text-base font-heading font-bold text-foreground truncate">Vantage</span>
           )}
           <button
             onClick={() => setExpanded((v) => !v)}

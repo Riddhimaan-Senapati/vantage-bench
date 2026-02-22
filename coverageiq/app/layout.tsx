@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import { Syne, DM_Sans, DM_Mono } from 'next/font/google';
+import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
-import Sidebar from '@/components/dashboard/Sidebar';
-import LoadingScreen from '@/components/LoadingScreen';
+import DashboardShell from '@/components/DashboardShell';
 import Providers from '@/components/providers';
 
 const syne = Syne({
@@ -36,19 +35,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${syne.variable} ${dmSans.variable} ${dmMono.variable} antialiased bg-bg-base text-foreground`}
-      >
-        <Providers>
-          <LoadingScreen />
-          <TooltipProvider delayDuration={300}>
-            <div className="flex h-screen overflow-hidden">
-              <Sidebar />
-              <main className="flex-1 overflow-y-auto">
-                {children}
-              </main>
-            </div>
+    <ClerkProvider afterSignInUrl="/" afterSignUpUrl="/">
+      <html lang="en" suppressHydrationWarning>
+        <body
+          className={`${syne.variable} ${dmSans.variable} ${dmMono.variable} antialiased bg-bg-base text-foreground`}
+        >
+          <Providers>
+            <DashboardShell>
+              {children}
+            </DashboardShell>
             <Toaster
               toastOptions={{
                 style: {
@@ -58,9 +53,9 @@ export default function RootLayout({
                 },
               }}
             />
-          </TooltipProvider>
-        </Providers>
-      </body>
-    </html>
+          </Providers>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

@@ -22,7 +22,7 @@ function PriorityBadge({ priority }: { priority: Task['priority'] }) {
   return (
     <span
       className={cn(
-        'text-[10px] font-mono font-medium px-1.5 py-0.5 rounded border leading-none flex-shrink-0',
+        'text-xs font-mono font-medium px-1.5 py-0.5 rounded border leading-none flex-shrink-0',
         colors[priority]
       )}
     >
@@ -37,7 +37,7 @@ function DeadlineText({ deadline }: { deadline: Date }) {
   const isUrgent = hours >= 0 && hours < 48;
   const isPast = hours < 0;
   return (
-    <span className={cn('text-xs font-mono', isPast || isUrgent ? 'text-status-red' : 'text-muted-foreground')}>
+    <span className={cn('text-[13px] font-mono', isPast || isUrgent ? 'text-status-red' : 'text-muted-foreground')}>
       due {label}
     </span>
   );
@@ -69,7 +69,7 @@ function RiskCard({ task, assigneeName, onClick }: RiskCardProps) {
       </div>
 
       {/* Project name */}
-      <p className="text-xs font-mono text-muted-foreground mb-2 truncate">
+      <p className="text-[13px] font-mono text-muted-foreground mb-2 truncate">
         {task.projectName}
         {assigneeName && (
           <span className="text-muted-foreground/60"> · {assigneeName}</span>
@@ -80,7 +80,7 @@ function RiskCard({ task, assigneeName, onClick }: RiskCardProps) {
       <div className="flex items-center gap-3">
         <DeadlineText deadline={task.deadline} />
         {task.suggestions.length > 0 && (
-          <span className="text-xs text-muted-foreground">
+          <span className="text-[13px] text-muted-foreground">
             {task.suggestions.length} suggestion{task.suggestions.length !== 1 ? 's' : ''}
           </span>
         )}

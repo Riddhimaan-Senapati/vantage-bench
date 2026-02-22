@@ -116,7 +116,7 @@ function SkillsEditor({ memberId, initialSkills }: { memberId: string; initialSk
           {skills.map((skill) => (
             <span
               key={skill}
-              className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-bg-surface2 text-muted-foreground border border-border/60"
+              className="text-xs font-mono px-1.5 py-0.5 rounded bg-bg-surface2 text-muted-foreground border border-border/60"
             >
               {skill}
             </span>
@@ -279,7 +279,7 @@ function MemberRow({
 
         {/* Team */}
         <td className="px-4 py-3">
-          <span className="text-[11px] font-mono px-1.5 py-0.5 rounded border border-border bg-bg-surface2 text-muted-foreground">
+          <span className="text-xs font-mono px-1.5 py-0.5 rounded border border-border bg-bg-surface2 text-muted-foreground">
             {member.team}
           </span>
         </td>
@@ -303,7 +303,7 @@ function MemberRow({
         <td className="px-4 py-3">
           <span
             className={cn(
-              'text-[10px] font-mono px-1.5 py-0.5 rounded border',
+              'text-xs font-mono px-1.5 py-0.5 rounded border',
               isOOO
                 ? 'bg-status-red/10 text-status-red border-status-red/30'
                 : 'bg-status-green/10 text-status-green border-status-green/30'
@@ -319,18 +319,18 @@ function MemberRow({
             {member.skills.slice(0, 3).map((s) => (
               <span
                 key={s}
-                className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-bg-surface2 text-muted-foreground border border-border/60"
+                className="text-xs font-mono px-1.5 py-0.5 rounded bg-bg-surface2 text-muted-foreground border border-border/60"
               >
                 {s}
               </span>
             ))}
             {member.skills.length > 3 && (
-              <span className="text-[10px] font-mono text-muted-foreground/60">
+              <span className="text-xs font-mono text-muted-foreground/60">
                 +{member.skills.length - 3}
               </span>
             )}
             {member.skills.length === 0 && (
-              <span className="text-[10px] font-mono text-muted-foreground/40">—</span>
+              <span className="text-xs font-mono text-muted-foreground/40">—</span>
             )}
           </div>
         </td>
@@ -557,13 +557,13 @@ export default function TeamPage() {
                     {col.key ? (
                       <button
                         onClick={() => col.key && handleSort(col.key)}
-                        className="flex items-center text-[11px] font-mono text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                        className="flex items-center text-xs font-mono text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
                       >
                         {col.label}
                         <SortIcon active={sortCol === col.key} dir={sortDir} />
                       </button>
                     ) : (
-                      <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
+                      <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
                         {col.label}
                       </span>
                     )}

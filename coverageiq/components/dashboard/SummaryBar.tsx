@@ -21,7 +21,7 @@ function StatBlock({ label, value, colorClass }: StatBlockProps) {
       >
         {value}
       </span>
-      <span className="text-[11px] text-muted-foreground text-center leading-tight font-sans">
+      <span className="text-xs text-muted-foreground text-center leading-tight font-sans">
         {label}
       </span>
     </div>
