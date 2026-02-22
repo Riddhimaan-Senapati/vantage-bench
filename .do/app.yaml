@@ -4,7 +4,7 @@ region: nyc
 services:
   - name: api
     github:
-      repo: Riddhimaan-Senapati/entreprise-planning
+      repo: Riddhimaan-Senapati/vantage-bench
       branch: main
       deploy_on_push: true
     source_dir: backend
