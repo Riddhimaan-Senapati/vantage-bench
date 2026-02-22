@@ -1,0 +1,61 @@
+name: coverageiq
+region: nyc
+
+services:
+  - name: api
+    github:
+      repo: Riddhimaan-Senapati/entreprise-planning
+      branch: main
+      deploy_on_push: true
+    source_dir: backend
+    run_command: uvicorn main:app --host 0.0.0.0 --port 8080
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-1gb
+    health_check:
+      http_path: /health
+
+    envs:
+      # Database — paste the SQLAlchemy URL from the DO Managed PostgreSQL console
+      # Take the "connection string" from the console and change postgresql:// → postgresql+psycopg2://
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        type: secret
+        value: "REPLACE_ME"
+
+      # Slack
+      - key: SLACK_BOT_TOKEN
+        scope: RUN_TIME
+        type: secret
+        value: "REPLACE_ME"
+      - key: SLACK_CHANNEL_ID
+        scope: RUN_TIME
+        type: secret
+        value: "REPLACE_ME"
+      - key: SLACK_PING_USER_ID
+        scope: RUN_TIME
+        type: secret
+        value: ""
+
+      # Gemini
+      - key: GEMINI_API_KEY
+        scope: RUN_TIME
+        type: secret
+        value: "REPLACE_ME"
+
+      # Gmail OAuth (optional — leave blank to disable Gmail endpoints)
+      - key: GMAIL_CLIENT_ID
+        scope: RUN_TIME
+        type: secret
+        value: ""
+      - key: GMAIL_CLIENT_SECRET
+        scope: RUN_TIME
+        type: secret
+        value: ""
+      - key: GMAIL_REFRESH_TOKEN
+        scope: RUN_TIME
+        type: secret
+        value: ""
+      - key: GMAIL_USER_EMAIL
+        scope: RUN_TIME
+        value: "me"

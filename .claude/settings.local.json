@@ -40,7 +40,9 @@
       "Bash(grep:*)",
       "WebSearch",
       "WebFetch(domain:ai.pydantic.dev)",
-      "mcp__claude_ai_Slack__slack_read_channel"
+      "mcp__claude_ai_Slack__slack_read_channel",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs"
     ]
   }
 }
