@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import difflib
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
 from sqlmodel import Session, select
@@ -347,8 +347,11 @@ def tick_slack_ooo_status(db: Session) -> tuple[list[str], list[str]]:
         ooo_until = _ensure_utc(m.slack_ooo_until)
         ooo_start = _ensure_utc(m.slack_ooo_start)
 
-        # Restore: OOO window has ended
-        if ooo_until is not None and ooo_until <= now:
+        # Restore: OOO window has ended.
+        # Compare calendar dates, not UTC datetimes — a date-only end like "2/22"
+        # parses to midnight UTC, which would wrongly trigger a restore if the sync
+        # runs even one second into that UTC day.
+        if ooo_until is not None and ooo_until.date() < now.date():
             m.leave_status = "available"
             m.is_ooo = False
             m.confidence_score = _confidence_from_calendar(m.calendar_pct, "available")
@@ -394,29 +397,29 @@ def apply_timeoff_entries(
         start_dt = _parse_date_str(entry.start_date) or now
         end_dt   = _parse_date_str(entry.end_date)
 
-        # Skip stale entries (entire OOO window has already passed)
-        if end_dt is not None and end_dt <= now:
+        # Skip stale entries: only skip if the end date is a past calendar day.
+        # Comparing dates (not datetimes) avoids false-positives when "2/22" parses
+        # to midnight UTC but the sync runs a few hours into that same UTC day.
+        if end_dt is not None and end_dt.date() < now.date():
             skipped += 1
             continue
 
-        # Match by exact Slack user ID first; fall back to fuzzy name
-        person_id = entry.person_username
-        if _is_slack_user_id(person_id):
-            member = _member_by_slack_id(person_id, all_members)
-        else:
-            member = _best_member_match(person_id, all_members)
+        member = _best_member_match(entry.person_username, all_members)
 
         if not member:
+            print(f"[timeoff sync] SKIP (no_match): person_username={entry.person_username!r}")
             skipped += 1
             continue
 
         # Don't overwrite manually-set overrides
         if member.manually_overridden:
+            print(f"[timeoff sync] SKIP (manual_override): member={member.name}")
             skipped += 1
             continue
 
         # Deduplicate: first match in the batch wins
         if member.id in processed_ids:
+            print(f"[timeoff sync] SKIP (duplicate): member={member.name}")
             skipped += 1
             continue
         processed_ids.add(member.id)
@@ -460,6 +463,51 @@ def apply_timeoff_entries(
         skipped=skipped,
         changes=changes,
     )
+
+
+def simulate_timeoff_matching(
+    db: Session,
+    entries: list,
+) -> dict[str, str]:
+    """
+    Dry-run version of apply_timeoff_entries.  Returns a mapping of
+    entry index → human-readable match result string, with no DB writes.
+    Used by GET /timeoff/debug.
+    """
+    now = datetime.now(timezone.utc)
+    all_members = db.exec(select(TeamMember)).all()
+    results: dict[str, str] = {}
+    processed_ids: set[str] = set()
+
+    for i, entry in enumerate(entries):
+        key = str(i)
+        start_dt = _parse_date_str(entry.start_date) or now
+        end_dt   = _parse_date_str(entry.end_date)
+
+        if end_dt is not None and end_dt.date() < now.date():
+            results[key] = "skip:stale (OOO window already passed)"
+            continue
+
+        member = _best_member_match(entry.person_username, all_members)
+
+        if not member:
+            results[key] = f"skip:no_match (person={entry.person_username!r})"
+            continue
+
+        if member.manually_overridden:
+            results[key] = f"skip:manual_override ({member.name})"
+            continue
+
+        if member.id in processed_ids:
+            results[key] = f"skip:duplicate ({member.name})"
+            continue
+
+        processed_ids.add(member.id)
+        is_pending = start_dt > now
+        label = "pending" if is_pending else "apply_now"
+        results[key] = f"matched:{member.id} ({member.name}) [{label}]"
+
+    return results
 
 
 # ── Tasks ──────────────────────────────────────────────────────────────────────
