@@ -18,10 +18,17 @@ Slack / time-off endpoints (existing):
     POST /ping                            → DM a team member to check availability
 """
 
+import logging
 import os
 import sys
 from contextlib import asynccontextmanager
 from datetime import datetime
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%H:%M:%S",
+)
 
 # Force UTF-8 on Windows
 if sys.stdout.encoding != "utf-8":

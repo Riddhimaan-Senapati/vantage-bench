@@ -20,6 +20,7 @@ Optionally:
 """
 
 import base64
+import logging
 import os
 import re
 import time
@@ -38,6 +39,8 @@ from pydantic import BaseModel
 from pydantic_ai import Agent
 from pydantic_ai.exceptions import ModelHTTPError
 
+logger = logging.getLogger(__name__)
+
 # ── Config ─────────────────────────────────────────────────────────────────────
 
 GEMINI_MODEL = "google-gla:gemini-2.5-flash"
@@ -50,11 +53,15 @@ MAX_RETRIES = 4
 #   - caps latency to a manageable level even with max_results=10
 _SEARCH_DAYS = int(os.getenv("GMAIL_SEARCH_DAYS", "30"))
 GMAIL_SEARCH_QUERY = (
+    f"category:primary "
     f"(subject:(OOO OR \"out of office\" OR vacation OR \"on leave\" OR "
     f"\"time off\" OR \"away from office\" OR \"annual leave\" OR "
-    f"\"sick leave\" OR \"working from home\" OR WFH) "
+    f"\"sick leave\" OR \"working from home\" OR WFH OR \"day off\" OR "
+    f"\"taking off\" OR absent) "
     f"OR (\"out of office\" OR \"OOO\" OR \"vacation\" OR \"on leave\" OR "
-    f"\"not available\" OR \"unavailable\")) "
+    f"\"not available\" OR \"unavailable\" OR \"day off\" OR "
+    f"\"taking the day off\" OR \"taking off\" OR \"absent\" OR "
+    f"\"out sick\" OR \"not in\")) "
     f"newer_than:{_SEARCH_DAYS}d"
 )
 
@@ -171,13 +178,27 @@ def _parse_email_for_ooo(
         f"Body:\n{body_preview}"
     )
     for attempt in range(1, MAX_RETRIES + 1):
+        logger.debug("Gemini attempt %d/%d for subject=%r", attempt, MAX_RETRIES, subject)
         try:
-            return _ooo_agent.run_sync(prompt).output
+            result = _ooo_agent.run_sync(prompt).output
+            logger.debug(
+                "Gemini result: is_ooo=%s person=%r start=%r end=%r (subject=%r)",
+                result.is_ooo, result.person_name, result.start_date, result.end_date, subject,
+            )
+            return result
         except ModelHTTPError as e:
             if e.status_code == 429 and attempt < MAX_RETRIES:
                 wait = _retry_delay_from_error(e)
+                logger.warning(
+                    "Gemini 429 rate-limit, retrying in %ds (attempt %d/%d) for subject=%r",
+                    wait, attempt, MAX_RETRIES, subject,
+                )
                 time.sleep(wait)
             else:
+                logger.error(
+                    "Gemini failed after %d attempt(s) for subject=%r: %s",
+                    attempt, subject, e,
+                )
                 raise
 
 
@@ -276,76 +297,7 @@ class GmailTimeOffEntry(BaseModel):
 
 # ── Main public functions ──────────────────────────────────────────────────────
 
-def fetch_and_parse_gmail_debug(
-    max_results: int = 10,
-) -> tuple[str, int, int, list[GmailEmailTrace]]:
-    """
-    Debug version of fetch_and_parse_gmail: runs the Gmail search + Gemini
-    classification pipeline and returns per-email trace data without touching
-    the database.
-
-    Returns:
-        (search_query, search_days, emails_found, email_traces)
-    """
-    service = build_gmail_service()
-
-    list_response = service.users().messages().list(
-        userId=GMAIL_USER_EMAIL,
-        q=GMAIL_SEARCH_QUERY,
-        maxResults=max_results,
-    ).execute()
-
-    message_stubs = list_response.get("messages", [])
-    traces: list[GmailEmailTrace] = []
-
-    for i, stub in enumerate(message_stubs):
-        msg = service.users().messages().get(
-            userId=GMAIL_USER_EMAIL,
-            id=stub["id"],
-            format="full",
-        ).execute()
-
-        headers     = msg.get("payload", {}).get("headers", [])
-        subject     = _get_header(headers, "Subject") or "(no subject)"
-        from_raw    = _get_header(headers, "From")
-        sender_name, sender_email = _parse_sender(from_raw)
-
-        internal_ms = int(msg.get("internalDate", 0))
-        sent_at     = datetime.fromtimestamp(internal_ms / 1000, tz=timezone.utc)
-
-        body         = _decode_body(msg.get("payload", {}))
-        body_preview = body[:400].strip()
-
-        trace = GmailEmailTrace(
-            id=stub["id"],
-            subject=subject,
-            sender_name=sender_name,
-            sender_email=sender_email,
-            sent_at=sent_at.isoformat(),
-            body_length=len(body),
-            body_preview=body_preview,
-        )
-
-        try:
-            details = _parse_email_for_ooo(subject, sender_name, sender_email, body, sent_at)
-            trace.is_ooo      = details.is_ooo
-            trace.person_name = details.person_name
-            trace.start_date  = details.start_date
-            trace.end_date    = details.end_date
-            trace.reason      = details.reason
-            trace.notes       = details.notes
-        except Exception as exc:
-            trace.error = str(exc)
-
-        traces.append(trace)
-
-        if i < len(message_stubs) - 1:
-            time.sleep(INTER_CALL_DELAY_SECONDS)
-
-    return GMAIL_SEARCH_QUERY, _SEARCH_DAYS, len(message_stubs), traces
-
-
-def fetch_and_parse_gmail(max_results: int = 10) -> list[GmailTimeOffEntry]:
+def fetch_and_parse_gmail(max_results: int = 5) -> list[GmailTimeOffEntry]:
     """
     1. Search Gmail for OOO-related emails (pre-filtered by keyword query).
     2. Fetch each matching email's full content.
@@ -360,7 +312,32 @@ def fetch_and_parse_gmail(max_results: int = 10) -> list[GmailTimeOffEntry]:
     Returns:
         List of GmailTimeOffEntry objects for confirmed OOO emails only.
     """
+    logger.debug("Gmail search query: %s", GMAIL_SEARCH_QUERY)
+    logger.info(
+        "Searching Gmail inbox (user=%s, max_results=%d, lookback=%dd)",
+        GMAIL_USER_EMAIL, max_results, _SEARCH_DAYS,
+    )
+
     service = build_gmail_service()
+
+    # ── Diagnostic: log the 5 most recent inbox emails regardless of filter ───
+    try:
+        diag = service.users().messages().list(
+            userId=GMAIL_USER_EMAIL, labelIds=["INBOX"], maxResults=5
+        ).execute()
+        diag_stubs = diag.get("messages", [])
+        logger.info("DIAGNOSTIC — latest %d inbox email(s):", len(diag_stubs))
+        for diag_stub in diag_stubs:
+            diag_msg = service.users().messages().get(
+                userId=GMAIL_USER_EMAIL, id=diag_stub["id"], format="metadata",
+                metadataHeaders=["Subject", "From"],
+            ).execute()
+            diag_headers = diag_msg.get("payload", {}).get("headers", [])
+            diag_subject = _get_header(diag_headers, "Subject") or "(no subject)"
+            diag_from = _get_header(diag_headers, "From") or "(unknown sender)"
+            logger.info("  id=%s from=%r subject=%r", diag_stub["id"], diag_from, diag_subject)
+    except Exception as diag_exc:
+        logger.warning("DIAGNOSTIC fetch failed: %s", diag_exc)
 
     # ── Step 1: Search inbox ──────────────────────────────────────────────────
     list_response = service.users().messages().list(
@@ -370,7 +347,14 @@ def fetch_and_parse_gmail(max_results: int = 10) -> list[GmailTimeOffEntry]:
     ).execute()
 
     message_stubs = list_response.get("messages", [])
+    logger.info("Gmail search returned %d message stub(s)", len(message_stubs))
+
     if not message_stubs:
+        logger.warning(
+            "No emails matched the Gmail search query — verify keywords and that the "
+            "authenticated account (%s) received the emails within the last %dd",
+            GMAIL_USER_EMAIL, _SEARCH_DAYS,
+        )
         return []
 
     entries: list[GmailTimeOffEntry] = []
@@ -393,9 +377,22 @@ def fetch_and_parse_gmail(max_results: int = 10) -> list[GmailTimeOffEntry]:
         internal_ms = int(msg.get("internalDate", 0))
         sent_at     = datetime.fromtimestamp(internal_ms / 1000, tz=timezone.utc)
 
+        logger.debug(
+            "[%d/%d] Fetched email id=%s subject=%r sender=%r sent_at=%s",
+            i + 1, len(message_stubs), stub["id"], subject, sender_name,
+            sent_at.strftime("%Y-%m-%d %H:%M UTC"),
+        )
+
         body = _decode_body(msg.get("payload", {}))
 
         details = _parse_email_for_ooo(subject, sender_name, sender_email, body, sent_at)
+
+        logger.info(
+            "[%d/%d] Gemini → is_ooo=%s person=%r start=%r end=%r  (subject=%r)",
+            i + 1, len(message_stubs),
+            details.is_ooo, details.person_name, details.start_date, details.end_date,
+            subject,
+        )
 
         if details.is_ooo:
             person = details.person_name or sender_name
@@ -414,4 +411,8 @@ def fetch_and_parse_gmail(max_results: int = 10) -> list[GmailTimeOffEntry]:
         if i < len(message_stubs) - 1:
             time.sleep(INTER_CALL_DELAY_SECONDS)
 
+    logger.info(
+        "fetch_and_parse_gmail complete: scanned=%d ooo_detected=%d",
+        len(message_stubs), len(entries),
+    )
     return entries

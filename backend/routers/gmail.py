@@ -8,20 +8,17 @@ Routes:
     GET  /gmail/debug  → dry-run: show per-email trace without DB writes
 """
 
-from datetime import datetime, timezone
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 
 from crud import _best_member_match, _parse_date_str, apply_timeoff_entries, tick_slack_ooo_status
 from database import get_session
-from gmail_parser import (
-    _SEARCH_DAYS,
-    fetch_and_parse_gmail,
-    fetch_and_parse_gmail_debug,
-    is_gmail_configured,
-)
-from models import TeamMember, TimeOffSyncResult
+from gmail_parser import fetch_and_parse_gmail, is_gmail_configured
+from models import TimeOffSyncResult
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/gmail", tags=["gmail"])
 
@@ -48,7 +45,10 @@ def scan_gmail(
     ),
     db: Session = Depends(get_session),
 ) -> TimeOffSyncResult:
+    logger.info("POST /gmail/scan max_results=%d", max_results)
+
     if not is_gmail_configured():
+        logger.warning("Gmail not configured — returning 503")
         raise HTTPException(
             status_code=503,
             detail=(
@@ -62,6 +62,7 @@ def scan_gmail(
     try:
         entries = fetch_and_parse_gmail(max_results=max_results)
     except Exception as exc:
+        logger.error("Gmail API error: %s", exc, exc_info=True)
         raise HTTPException(
             status_code=502,
             detail=f"Gmail API error: {exc}",
@@ -74,6 +75,10 @@ def scan_gmail(
     # are immediately activated (is_ooo = True, leave_status = "ooo")
     tick_slack_ooo_status(db)
 
+    logger.info(
+        "Gmail scan result: detected=%d applied=%d pending=%d skipped=%d",
+        result.detected, result.applied, result.pending, result.skipped,
+    )
     return result
 
 

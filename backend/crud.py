@@ -9,8 +9,11 @@ All functions accept a SQLModel Session and return typed Pydantic objects
 from __future__ import annotations
 
 import difflib
+import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
+
+logger = logging.getLogger(__name__)
 
 from sqlmodel import Session, select
 
@@ -296,6 +299,7 @@ def _best_member_match(username: str, all_members: list[TeamMember]) -> TeamMemb
     """Fuzzy-match a Slack display name to a TeamMember (ratio >= 0.75)."""
     norm = username.lstrip("@").replace(".", " ").strip().lower()
     if not norm:
+        logger.warning("fuzzy-match: empty username after normalisation, skipping")
         return None
     best_ratio, best_member = 0.0, None
     for m in all_members:
@@ -306,7 +310,14 @@ def _best_member_match(username: str, all_members: list[TeamMember]) -> TeamMemb
         ratio = max(full, first)
         if ratio > best_ratio:
             best_ratio, best_member = ratio, m
-    return best_member if best_ratio >= 0.75 else None
+    if best_ratio >= 0.75:
+        logger.info("fuzzy-match: %r → %r (ratio=%.2f)", username, best_member.name, best_ratio)
+        return best_member
+    logger.warning(
+        "fuzzy-match: no match for %r — best was %r at ratio=%.2f (threshold 0.75)",
+        username, best_member.name if best_member else None, best_ratio,
+    )
+    return None
 
 
 def tick_slack_ooo_status(db: Session) -> tuple[list[str], list[str]]:
@@ -330,8 +341,9 @@ def tick_slack_ooo_status(db: Session) -> tuple[list[str], list[str]]:
         ooo_until = _ensure_utc(m.slack_ooo_until)
         ooo_start = _ensure_utc(m.slack_ooo_start)
 
-        # Restore: OOO window has ended (compare calendar dates to avoid
-        # midnight-UTC false-positives where end_dt parses to 00:00 UTC)
+        # Restore: OOO window has ended.
+        # Compare calendar dates so an OOO ending "today" stays active all day,
+        # matching the same logic used in apply_timeoff_entries.
         if ooo_until is not None and ooo_until.date() < now.date():
             m.leave_status = "available"
             m.is_ooo = False
@@ -376,25 +388,41 @@ def apply_timeoff_entries(
         start_dt = _parse_date_str(entry.start_date) or now
         end_dt   = _parse_date_str(entry.end_date)
 
-        # Skip stale entries (entire OOO window has already passed).
-        # Compare calendar dates so entries whose end_date parses to midnight
-        # UTC aren't incorrectly skipped on the same UTC day.
+        logger.info(
+            "apply: person=%r start=%r→%s end=%r→%s  now=%s",
+            entry.person_username,
+            entry.start_date, start_dt.strftime("%Y-%m-%d %H:%M:%S %Z"),
+            entry.end_date, end_dt.strftime("%Y-%m-%d %H:%M:%S %Z") if end_dt else None,
+            now.strftime("%Y-%m-%d %H:%M:%S %Z"),
+        )
+
+        # Skip stale entries whose OOO window has fully passed.
+        # Compare calendar dates (not datetimes) so an OOO ending "today" stays
+        # valid for the whole day regardless of what time-of-day end_dt resolved to.
         if end_dt is not None and end_dt.date() < now.date():
+            logger.warning(
+                "SKIP person=%r — end_date %s (%s) is before today %s",
+                entry.person_username, entry.end_date,
+                end_dt.strftime("%Y-%m-%d %H:%M:%S %Z"), now.strftime("%Y-%m-%d"),
+            )
             skipped += 1
             continue
 
         member = _best_member_match(entry.person_username, all_members)
         if not member:
+            logger.warning("SKIP person=%r — no team member matched (fuzzy ratio < 0.75)", entry.person_username)
             skipped += 1
             continue
 
         # Don't overwrite manually-set overrides
         if member.manually_overridden:
+            logger.warning("SKIP person=%r → member=%r — manually_overridden=True", entry.person_username, member.name)
             skipped += 1
             continue
 
         # Deduplicate: first match in the batch wins
         if member.id in processed_ids:
+            logger.warning("SKIP person=%r → member=%r — duplicate in this batch", entry.person_username, member.name)
             skipped += 1
             continue
         processed_ids.add(member.id)
